@@ -1,0 +1,23 @@
+const mongoose = require("mongoose");
+
+const TicketSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: "ObjectId",
+      required: true,
+      ref: "User",
+    },
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["open", "inprogress", "closed"],
+      default: "open",
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+module.exports = mongoose.model("Ticket", TicketSchema);
