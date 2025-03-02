@@ -74,11 +74,12 @@ const handleLogin = async (req, res) => {
       // secure: true, // comment this when using thunderclient to test refreshToken otherwise cookie will not be set on req.cookies
       maxAge: 24 * 60 * 60 * 1000,
     });
-    res.status(200).json({
-      success: `Success, Logged in as ${result.fullName}!`,
+    res.json({
+      message: `Success, Logged in as ${result.fullName}!`,
       id: result.id,
       fullName: result.fullName,
       email,
+      role: result.role,
       accessToken,
     });
   } catch (err) {

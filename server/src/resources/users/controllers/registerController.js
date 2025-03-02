@@ -49,11 +49,11 @@ const handleNewUser = async (req, res) => {
     });
 
     res.status(201).json({
-      message: "User registered successfully",
-      success: `New user ${fullName} created!`,
+      message: "You are registered successfully",
       id: result.id,
       fullName,
       email,
+      role: result.role,
       accessToken,
     });
   } catch (err) {

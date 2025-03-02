@@ -1,4 +1,6 @@
+const User = require("../users/model");
 const Ticket = require("./model");
+
 const logger = require("../../config/logger");
 
 const handleGetTicket = async (req, res) => {
@@ -7,6 +9,7 @@ const handleGetTicket = async (req, res) => {
     const result = await Ticket.find({ userId: req.params.id });
     res.json({ result });
   } catch (err) {
+    logger.error(err.message)
     res.status(500).json({ message: err.message });
   }
 };
@@ -16,8 +19,9 @@ const handleGetAllTicket = async (req, res) => {
     logger.info("All ticket list request received");
 
     const result = await Ticket.find({});
-    res.json({ result });
+    res.json(result);
   } catch (err) {
+    logger.error(err.message)
     res.status(500).json({ message: err.message });
   }
 };
@@ -26,19 +30,20 @@ const handleNewTicket = async (req, res) => {
   try {
     logger.info("Ticket creation request received");
     console.log(req.body);
-    const { title, description, status } = req.body;
+    const { title, description } = req.body;
 
+    const user = await User.findOne({email: req.user.email}).exec();
     const result = await Ticket.create({
-      userId: req.params.id,  
+      userId: user._id,
       title,
       description,
-      status,
     });
     res.status(201).json({
       success: `New Ticket with title ${result.title} created!`,
       result,
     });
   } catch (err) {
+    logger.error(err.message)
     res.status(500).json({ message: err.message });
   }
 };
@@ -63,6 +68,7 @@ const handleChangeTicket = async (req, res) => {
       result,
     });
   } catch (err) {
+    logger.error(err.message)
     res.status(500).json({ message: err.message });
   }
 };

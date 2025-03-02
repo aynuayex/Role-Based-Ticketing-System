@@ -41,8 +41,9 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-app.use("/api/users", userRoutes);
-app.use("/api/tickets", verifyJWT, ticketRoutes);
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/tickets", verifyJWT, ticketRoutes);
+// app.use("/api/v1/tickets", ticketRoutes);
 
 // default(404)
 app.all("*", (req, res) => {
