@@ -1,4 +1,4 @@
-import { Toaster } from "react-hot-toast";
+// import { Toaster } from "react-hot-toast";
 import {
   Route,
   createBrowserRouter,
@@ -11,15 +11,14 @@ import DashboardLayout from "./layouts/dashboard-layout";
 import HomePage from "./routes/home";
 import TicketForm from "./routes/ticket-form";
 import DashboardPage, { ticketsDataLoader } from "./routes/dashboard";
-import ThemeContextProvider from "@/contexts/theme-context";
+// import ThemeContextProvider from "@/contexts/theme-context";
 import SignUp from "./routes/sign-up";
 import SignIn from "./routes/sign-in";
-import { AuthProvider } from "./contexts/AuthProvider";
-import axios from "@/api/axios";
-// import useAxiosPrivate from "./hooks/useAxiosPrivate";
+// import { AuthProvider } from "./contexts/AuthProvider";
+import useAxiosPrivate from "./hooks/useAxiosPrivate";
 
 function App() {
-  // const axiosPrivate = useAxiosPrivate()
+  const axiosPrivate = useAxiosPrivate();
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<RootLayout />}>
@@ -41,7 +40,11 @@ function App() {
           }
         />
         <Route path="dashboard" element={<DashboardLayout />}>
-          <Route index element={<DashboardPage />} loader={() => ticketsDataLoader()} />
+          <Route
+            index
+            element={<DashboardPage />}
+            loader={() => ticketsDataLoader(axiosPrivate)}
+          />
           <Route
             path="ticket"
             element={<TicketForm />}
@@ -51,9 +54,7 @@ function App() {
             path="ticket/:id"
             element={<TicketForm />}
             loader={async ({ params }) => {
-              const response = await axios.get(
-                `${import.meta.env.VITE_BASE_API}/tickets/${params.id}`
-              );
+              const response = await axiosPrivate.get(`/tickets/${params.id}`);
               console.log(response.data);
               return response.data;
             }}
@@ -74,17 +75,17 @@ function App() {
   );
 
   return (
-    <ThemeContextProvider>
-      <AuthProvider>
+    // <ThemeContextProvider>
+    //   <AuthProvider>
         <RouterProvider
           router={router}
           // future={{
           //   v7_startTransition: true,
           // }}
         />
-      </AuthProvider>
-      <Toaster />
-    </ThemeContextProvider>
+    //   </AuthProvider>
+    //   <Toaster />
+    // </ThemeContextProvider>
   );
 }
 

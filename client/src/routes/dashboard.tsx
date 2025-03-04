@@ -19,9 +19,9 @@ import Heading from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/ui/data-table";
 import { format } from "date-fns";
-// import { AxiosInstance } from "axios";
+import { AxiosInstance } from "axios";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
-import { axiosPrivate } from "@/api/axios";
+// import { axiosPrivate } from "@/api/axios";
 
 export type TicketColumn = {
   _id: string;
@@ -34,7 +34,7 @@ export type TicketColumn = {
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const ticketsDataLoader = async () => {
+export const ticketsDataLoader = async (axiosPrivate: AxiosInstance) => {
   try {
     const response = await axiosPrivate.get(
       `${import.meta.env.VITE_BASE_API}/tickets`

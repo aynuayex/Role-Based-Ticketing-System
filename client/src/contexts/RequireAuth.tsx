@@ -15,7 +15,7 @@ const RequireAuth = ({children}: RequireAuthProps) => {
    auth?.accessToken ? (
     children || <Outlet />
     ) : (
-      <Navigate to="/sign-up" 
+      <Navigate to="/sign-in" 
       // state={{ from: location?.pathname , pizza: location?.state?.pizza }} replace
        />
     )

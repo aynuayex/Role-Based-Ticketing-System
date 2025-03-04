@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from "react-router";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import car from "@/assets/car.svg";
 import MainNav from "@/components/main-nav";
 import ThemeSwitch from "@/components/theme-switch";
@@ -7,11 +7,27 @@ import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import useLogOut from "@/hooks/useLogOut";
 import useAuth from "@/hooks/useAuth";
+import toast from "react-hot-toast";
 
 export default function RootLayout() {
-  const { auth } = useAuth();
-  const logOut = useLogOut();
   const navigate = useNavigate();
+  const location = useLocation();
+  const logOut = useLogOut();
+  const { auth, setAuth } = useAuth();
+
+  const handleLogout = () => {
+    logOut();
+    setAuth({
+      id: "",
+      email: "",
+      fullName: "",
+      role: "",
+      accessToken: "",
+    });
+    toast.success("You have Logged Out of your account!");
+    navigate("/");
+  };
+
   return (
     <>
       <header>
@@ -30,11 +46,13 @@ export default function RootLayout() {
           <div className="w-full flex items-center justify-around h-20 border-b">
             <MainNav />
             <ThemeSwitch />
-            {auth?.accessToken ? (
-              <Button onClick={() => logOut()}>Log Out</Button>
-            ) : (
-              <Button onClick={() => navigate("/sign-in")}>Register</Button>
-            )}
+            {location.pathname !== "/sign-in" &&
+              location.pathname !== "/sign-up" &&
+              (auth?.accessToken ? (
+                <Button onClick={handleLogout}>Log Out</Button>
+              ) : (
+                <Button onClick={() => navigate("/sign-in")}>Log In</Button>
+              ))}
           </div>
         </div>
       </header>
