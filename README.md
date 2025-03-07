@@ -46,9 +46,10 @@ cd Role-Based-Ticketing-System
    `npm install`
 
 3. - Go to [Mongodb](https://cloud.mongodb.com/) and create a    new Project and obtain the database URL connection string
-     and in the root of the **backend** folder create a `.env` file and inside paste to the value of **MONGO_URI**, add the **FRONTEND_URL** and also add the **PORT** like shown below.so, it should look like this:
+     and in the root of the **backend** folder create a `.env` file and inside paste to the value of **MONGO_URI**, add the **FRONTEND_URL** and also add the **PORT**, **NODE_ENV** like shown below.so, it should look like this:
         ```bash
         PORT=5000
+        NODE_ENV=development
         FRONTEND_URL=http://localhost:5173
         MONGO_URI=mongodb+srv://yourusername:yourpassword@cluster0.ozx0o.mongodb.net/TicketDB?retryWrites=true&w=majority&appName=Cluster0
         ```

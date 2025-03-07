@@ -11,17 +11,8 @@ if (process.env.NODE_ENV === "development") {
   }
 }
 
-console.log('NODE_ENV:', process.env.NODE_ENV);
-
 const transports = [
-  new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.printf(({ timestamp, level, message }) => {
-        return `${timestamp} [${level.toUpperCase()}]: ${message}`;
-      })
-    ),
-  }),
+  new winston.transports.Console(),
 ];
 
 // Add file transport only in development
