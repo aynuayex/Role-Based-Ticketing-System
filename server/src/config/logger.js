@@ -5,11 +5,13 @@ const path = require("path");
 const logDir = "logs";
 
 // Only create logs directory in development
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV === "development") {
   if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir, { recursive: true });
   }
 }
+
+console.log('NODE_ENV:', process.env.NODE_ENV);
 
 const transports = [
   new winston.transports.Console({
@@ -23,7 +25,7 @@ const transports = [
 ];
 
 // Add file transport only in development
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV === "development") {
   transports.push(new winston.transports.File({ filename: path.join(logDir, "app.log") }));
 }
 
