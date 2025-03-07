@@ -49,13 +49,11 @@ const SignIn = () => {
 
   const onSubmit = async (data: SignInFormSchemaType) => {
     try {
-      setPersist(data.persist);
-      localStorage.setItem("persist", JSON.stringify(data.persist));
+      const { persist, ...dataWithOutPersist } = data;
+      setPersist(persist);
+      localStorage.setItem("persist", JSON.stringify(persist));
       console.log({ data });
-      const response = await axios.post(`/users/login`, {
-        email: data.email,
-        password: data.password,
-      });
+      const response = await axios.post(`/users/login`, dataWithOutPersist);
       if (response.status === 200) {
         const { message, id, email, fullName, role, accessToken, emailVerified } =
           response.data;

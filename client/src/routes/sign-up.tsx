@@ -78,10 +78,11 @@ const SignUp = () => {
 
   const onSubmit = async (data: SignUpFormSchemaType) => {
     try {
-      setPersist(data.persist);
-      localStorage.setItem("persist", JSON.stringify(data.persist));
+      const { persist, ...dataWithOutPersist } = data;
+      setPersist(persist);
+      localStorage.setItem("persist", JSON.stringify(persist));
       console.log({ data });
-      const response = await axios.post(`/users/register`, data);
+      const response = await axios.post(`/users/register`, dataWithOutPersist);
       if (response.status === 201) {
         const {
           message,
