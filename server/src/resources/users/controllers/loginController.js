@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const User = require("../model");
+const { User } = require("../model");
 const logger = require("../../../config/logger");
 
 const handleLogin = async (req, res) => {
@@ -16,19 +16,32 @@ const handleLogin = async (req, res) => {
     //evaluate password
     const match = await bcrypt.compare(password, foundUser?.password);
     if (!match) return res.sendStatus(401);
-    // if (!foundUser.emailVerified) return res.sendStatus(403); //forbiden
     // create JWTs
     const accessToken = jwt.sign(
-      { userInfo: { fullName: foundUser.fullName, email } },
+      {
+        userInfo: {
+          id: foundUser._id,
+          fullName: foundUser.fullName,
+          email,
+          role: foundUser.role,
+        },
+      },
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: "1h" }
     );
     const newRefreshToken = jwt.sign(
-      { userInfo: { fullName: foundUser.fullName, email } },
+      {
+        userInfo: {
+          id: foundUser._id,
+          fullName: foundUser.fullName,
+          email,
+          role: foundUser.role,
+        },
+      },
       process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: "1d" }
     );
-
+    
     // Saving refreshToken with current user
     let newRefreshTokenArray = !cookie.jwt
       ? foundUser.refreshToken
@@ -39,50 +52,63 @@ const handleLogin = async (req, res) => {
                 1) User logs in but never uses RT and does not logout 
                 2) RT is stolen
                 3) If 1 & 2, reuse detection is needed to clear all RTs when user logs in
-            */
+                */
       const refreshToken = cookie.jwt;
       const foundToken = await User.findOne({
         email,
         refreshToken: { $in: [refreshToken] },
       });
-
+      
       // Detected refresh token reuse!
       if (!foundToken) {
         console.log("attempted refresh token reuse at login!");
         // clear out ALL previous refresh tokens
         newRefreshTokenArray = [];
       }
-
+      
       res.clearCookie("jwt", {
         httpOnly: true,
         sameSite: "None",
-        // secure: true,
+        secure: true,
       });
     }
-
+    
     const result = await User.findByIdAndUpdate(
       foundUser._id,
       { $set: { refreshToken: [...newRefreshTokenArray, newRefreshToken] } },
       { new: true }
     );
-
+    
     console.log(result);
-
+    
     res.cookie("jwt", newRefreshToken, {
       httpOnly: true,
       sameSite: "None",
-      // secure: true, // comment this when using thunderclient to test refreshToken otherwise cookie will not be set on req.cookies
+      secure: true, // comment this when using thunderclient to test refreshToken otherwise cookie will not be set on req.cookies
       maxAge: 24 * 60 * 60 * 1000,
     });
-    res.json({
-      message: `Success, Logged in as ${result.fullName}!`,
-      id: result.id,
+
+    //forbiden, but set access and refresh Token,so that we don't have to do it again in emailverification controller
+    if (!foundUser.emailVerified) return res.status(403).json({
+      id: result._id,
       fullName: result.fullName,
       email,
       role: result.role,
       accessToken,
+      emailVerified: result.emailVerified
+    }); 
+
+    res.json({
+      message: `Success, Logged in as ${result.fullName}!`,
+      id: result._id,
+      fullName: result.fullName,
+      email,
+      role: result.role,
+      accessToken,
+      emailVerified: result.emailVerified
     });
   } catch (err) {
+    logger.error(err.message);
     res.status(500).json({ message: err.message });
   }
 };

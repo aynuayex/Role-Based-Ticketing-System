@@ -6,6 +6,7 @@ type AuthType = {
   fullName: string;
   role: string;
   accessToken: string;
+  emailVerified: boolean;
 };
 
 export type AuthProviderType = {
@@ -24,6 +25,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     fullName: "",
     role: "",
     accessToken: "",
+    emailVerified: false,
   });
   const [persist, setPersist] = useState<boolean>(
     JSON.parse(localStorage.getItem("persist") || "false")

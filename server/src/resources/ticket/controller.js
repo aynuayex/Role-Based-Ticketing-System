@@ -1,4 +1,3 @@
-const User = require("../users/model");
 const Ticket = require("./model");
 
 const logger = require("../../config/logger");
@@ -6,10 +5,24 @@ const logger = require("../../config/logger");
 const handleGetTicket = async (req, res) => {
   try {
     logger.info("Single ticket request received");
-    const result = await Ticket.find({ userId: req.params.id });
-    res.json({ result });
+    const user = req.user;
+
+    // If admin, fetch the ticket.
+    if (user.role === "admin") {
+      const tickets = await Ticket.findOne({
+        _id: req.params.ticketId,
+      }).exec();
+      return res.json(tickets);
+    }
+
+    // If regular user, fetch only the ticket they own.
+    const tickets = await Ticket.findOne({
+      userId: user.id,
+      _id: req.params.ticketId,
+    }).exec();
+    res.json(tickets);
   } catch (err) {
-    logger.error(err.message)
+    logger.error(err.message);
     res.status(500).json({ message: err.message });
   }
 };
@@ -17,11 +30,23 @@ const handleGetTicket = async (req, res) => {
 const handleGetAllTicket = async (req, res) => {
   try {
     logger.info("All ticket list request received");
+    const user = req.user;
+    // If admin, fetch all tickets
+    if (user.role === "admin") {
+      // Populate only fullName and rename it as userId  directly like
+      // userId: "ayne abreham" instead of being "userId": { "fullName": "ayne abreham"}
+      const tickets = await Ticket.find({})
+        .populate({ path: "userId", select: "fullName", transform: (doc) => doc?.fullName });
 
-    const result = await Ticket.find({});
-    res.json(result);
+      return res.json(tickets);
+    }
+    
+    console.log({User: user.id})
+    // If regular user, fetch only their tickets
+    const tickets = await Ticket.find({ userId: user.id });
+    res.json(tickets);
   } catch (err) {
-    logger.error(err.message)
+    logger.error(err.message);
     res.status(500).json({ message: err.message });
   }
 };
@@ -32,9 +57,8 @@ const handleNewTicket = async (req, res) => {
     console.log(req.body);
     const { title, description } = req.body;
 
-    const user = await User.findOne({email: req.user.email}).exec();
     const result = await Ticket.create({
-      userId: user._id,
+      userId: req.user.id,
       title,
       description,
     });
@@ -43,23 +67,22 @@ const handleNewTicket = async (req, res) => {
       result,
     });
   } catch (err) {
-    logger.error(err.message)
+    logger.error(err.message);
     res.status(500).json({ message: err.message });
   }
 };
 
-const handleChangeTicket = async (req, res) => {
+const handleUpdateTicketByUser = async (req, res) => {
   try {
-    logger.info("Ticket change request received");
+    logger.info("Ticket update request received by User");
     console.log(req.body);
-    const { title, description, status } = req.body;
+    const { title, description } = req.body;
 
     const result = await Ticket.findByIdAndUpdate(
-      { _id: req.params.id },
+      { _id: req.params.ticketId },
       {
         title,
         description,
-        status,
       },
       { new: true }
     );
@@ -68,7 +91,43 @@ const handleChangeTicket = async (req, res) => {
       result,
     });
   } catch (err) {
-    logger.error(err.message)
+    logger.error(err.message);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const handleUpdateTicketByAdmin = async (req, res) => {
+  try {
+    logger.info("Ticket update request received by Admin");
+    console.log(req.body);
+    const { status } = req.body;
+
+    const result = await Ticket.findByIdAndUpdate(
+      { _id: req.params.ticketId },
+      { status },
+      { new: true }
+    );
+    res.json({
+      success: `Ticket updated!`,
+      result,
+    });
+  } catch (err) {
+    logger.error(err.message);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const handleDeleteTicket = async (req, res) => {
+  try {
+    logger.info("Ticket delete request received");
+
+    const result = await Ticket.findByIdAndDelete({ _id: req.params.ticketId });
+    res.json({
+      success: `Ticket deleted!`,
+      result,
+    });
+  } catch (err) {
+    logger.error(err.message);
     res.status(500).json({ message: err.message });
   }
 };
@@ -77,5 +136,7 @@ module.exports = {
   handleGetTicket,
   handleGetAllTicket,
   handleNewTicket,
-  handleChangeTicket,
+  handleUpdateTicketByUser,
+  handleUpdateTicketByAdmin,
+  handleDeleteTicket,
 };

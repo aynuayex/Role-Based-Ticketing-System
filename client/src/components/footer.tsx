@@ -6,8 +6,8 @@ export default function Footer() {
       </small>
       <p className="text-xs">
         <span className="font-semibold">About this website:</span> built with
-        React, TypeScript, Tailwind CSS, Shadcn-ui, MongoDB, Node.js,
-        Express.
+        React, React Query, TypeScript, Tailwind CSS, Shadcn-ui, MongoDB, Node.js,
+        Express, JWT, Nodemailer
       </p>
     </footer>
   );

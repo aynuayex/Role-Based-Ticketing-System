@@ -23,7 +23,6 @@ import { Input } from "./input";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  // data: any;
   searchKey: string;
 }
 

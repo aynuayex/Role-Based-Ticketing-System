@@ -17,6 +17,8 @@ import toast from "react-hot-toast";
 import useAuth from "@/hooks/useAuth";
 import { Checkbox } from "@/components/ui/checkbox";
 import axios from "@/api/axios";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 const signInFormSchema = z.object({
   email: z.string().email({ message: "Not a valid Email Address." }),
@@ -30,6 +32,7 @@ type SignInFormSchemaType = z.infer<typeof signInFormSchema>;
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const [hidePassword, setHidePassword] = useState(true);
   const { setAuth, setPersist } = useAuth();
   const form = useForm<SignInFormSchemaType>({
     resolver: zodResolver(signInFormSchema),
@@ -40,25 +43,26 @@ const SignIn = () => {
     },
   });
 
+  const togglePasswordVisibility = () => setHidePassword(!hidePassword);
+
+  const passwordType = hidePassword ? "password" : "text";
+
   const onSubmit = async (data: SignInFormSchemaType) => {
     try {
       setPersist(data.persist);
       localStorage.setItem("persist", JSON.stringify(data.persist));
       console.log({ data });
-      const response = await axios.post(
-        `${import.meta.env.VITE_BASE_API}/users/login`,
-        {email: data.email, password: data.password}
-      );
+      const response = await axios.post(`/users/login`, {
+        email: data.email,
+        password: data.password,
+      });
       if (response.status === 200) {
-        const { message, id, email, fullName, role, accessToken } =
+        const { message, id, email, fullName, role, accessToken, emailVerified } =
           response.data;
-        console.log({ message, id, email, fullName, role, accessToken });
+        console.log({ message, id, email, fullName, role, accessToken, emailVerified });
+        setAuth({ id, email, fullName, role, accessToken, emailVerified });
         toast.success(message);
-        setAuth({ id, email, fullName, role, accessToken });
 
-        // updateAbility(role.permissions);
-
-        // navigate(from, { state: { pizza } });
         navigate("/dashboard");
       }
       console.log(response);
@@ -72,7 +76,12 @@ const SignIn = () => {
       } else if (err.response?.status === 401) {
         toast.error("Unauthorized, Your Email and/or Password is not correct!");
       } else if (err.response?.status === 403) {
-        toast.error("Forbidden,Your account is not approved by Admin!");
+        const { id, email, fullName, role, accessToken, emailVerified } =
+          err.response.data;
+        console.log({ id, email, fullName, role, accessToken, emailVerified });
+        setAuth({ id, email, fullName, role, accessToken, emailVerified });
+        toast.error("Forbidden,You need to verify your email before you LogIn!");
+        navigate("/verify-email")
       } else {
         toast.error("Login Failed, Please Try again later!");
       }
@@ -83,7 +92,7 @@ const SignIn = () => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="bg-white space-y-8 w-1/3 flex flex-col justify-center items-center p-2 py-4 rounded-lg shadow"
+        className="bg-background/40 space-y-8 w-4/5 sm:w-1/3 mt-4 sm:mt-0 flex flex-col justify-center items-center p-2 py-4 rounded-lg shadow"
       >
         <Heading title="Log In" />
         <div className="w-full flex flex-col justify-center items-center gap-8">
@@ -105,6 +114,7 @@ const SignIn = () => {
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="password"
@@ -112,12 +122,20 @@ const SignIn = () => {
               <FormItem className="w-3/4 ">
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input
-                    type="password"
-                    disabled={form.formState.isSubmitting}
-                    placeholder="Enter your Password"
-                    {...field}
-                  />
+                  <div className="w-full relative  ">
+                    <Input
+                      type={passwordType}
+                      disabled={form.formState.isSubmitting}
+                      placeholder="Enter your Password"
+                      {...field}
+                    />
+                    <span
+                      className="absolute left-[calc(100%-28px)] top-1/2 transform -translate-y-1/2 cursor-pointer dark:text-white"
+                      onClick={togglePasswordVisibility}
+                    >
+                      {hidePassword ? <Eye /> : <EyeOff />}
+                    </span>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -143,6 +161,7 @@ const SignIn = () => {
 
         <div className="flex space-x-8">
           <Button
+            type="button"
             onClick={() => navigate("/")}
             disabled={form.formState.isSubmitting}
           >
@@ -152,7 +171,7 @@ const SignIn = () => {
             Sign In
           </Button>
         </div>
-        <p className="text-center ">
+        <p className="text-center">
           Have not an account?{" "}
           <Link className="text-blue-600 underline" to="/sign-up">
             Sign up

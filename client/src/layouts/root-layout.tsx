@@ -8,14 +8,18 @@ import { Button } from "@/components/ui/button";
 import useLogOut from "@/hooks/useLogOut";
 import useAuth from "@/hooks/useAuth";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function RootLayout() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const location = useLocation();
+
   const logOut = useLogOut();
   const { auth, setAuth } = useAuth();
 
   const handleLogout = () => {
+    queryClient.clear(); // Clears all cached data, forcing a fresh fetch on login(otherwise the data would be stale)
     logOut();
     setAuth({
       id: "",
@@ -23,9 +27,12 @@ export default function RootLayout() {
       fullName: "",
       role: "",
       accessToken: "",
+      emailVerified: true
     });
+    setTimeout(() => {
+      navigate("/");
+    }, 0); // Ensures auth state updates before navigation
     toast.success("You have Logged Out of your account!");
-    navigate("/");
   };
 
   return (
@@ -48,6 +55,7 @@ export default function RootLayout() {
             <ThemeSwitch />
             {location.pathname !== "/sign-in" &&
               location.pathname !== "/sign-up" &&
+              location.pathname !== "/verify-email" &&
               (auth?.accessToken ? (
                 <Button onClick={handleLogout}>Log Out</Button>
               ) : (

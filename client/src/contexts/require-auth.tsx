@@ -5,20 +5,16 @@ interface RequireAuthProps {
   children?: React.ReactNode;
 }
 
-const RequireAuth = ({children}: RequireAuthProps) => {
+const RequireAuth = ({ children }: RequireAuthProps) => {
   const { auth } = useAuth();
   const location = useLocation();
   console.log(location);
   console.log(auth);
 
-  return (
-   auth?.accessToken ? (
+  return auth?.accessToken && auth.emailVerified ? (
     children || <Outlet />
-    ) : (
-      <Navigate to="/sign-in" 
-      // state={{ from: location?.pathname , pizza: location?.state?.pizza }} replace
-       />
-    )
+  ) : (
+    <Navigate to="/sign-in" />
   );
 };
 

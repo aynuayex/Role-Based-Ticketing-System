@@ -1,24 +1,26 @@
-// import { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import {
   Route,
   createBrowserRouter,
   createRoutesFromElements,
 } from "react-router";
 import { RouterProvider } from "react-router/dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import RootLayout from "./layouts/root-layout";
 import DashboardLayout from "./layouts/dashboard-layout";
 import HomePage from "./routes/home";
 import TicketForm from "./routes/ticket-form";
-import DashboardPage, { ticketsDataLoader } from "./routes/dashboard";
-// import ThemeContextProvider from "@/contexts/theme-context";
+import DashboardPage from "./routes/dashboard";
 import SignUp from "./routes/sign-up";
 import SignIn from "./routes/sign-in";
-// import { AuthProvider } from "./contexts/AuthProvider";
-import useAxiosPrivate from "./hooks/useAxiosPrivate";
+import VerifyEmail from "./routes/verify-email";
+import ThemeContextProvider from "@/contexts/theme-context";
+import { AuthProvider } from "./contexts/auth-provider";
+
+const queryClient = new QueryClient();
 
 function App() {
-  const axiosPrivate = useAxiosPrivate();
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<RootLayout />}>
@@ -39,26 +41,18 @@ function App() {
             </div>
           }
         />
+        <Route
+          path="verify-email"
+          element={
+            <div className="flex justify-center">
+              <VerifyEmail />
+            </div>
+          }
+        />
         <Route path="dashboard" element={<DashboardLayout />}>
-          <Route
-            index
-            element={<DashboardPage />}
-            loader={() => ticketsDataLoader(axiosPrivate)}
-          />
-          <Route
-            path="ticket"
-            element={<TicketForm />}
-            loader={async () => null}
-          />
-          <Route
-            path="ticket/:id"
-            element={<TicketForm />}
-            loader={async ({ params }) => {
-              const response = await axiosPrivate.get(`/tickets/${params.id}`);
-              console.log(response.data);
-              return response.data;
-            }}
-          />
+          <Route index element={<DashboardPage />} />
+          <Route path="ticket" element={<TicketForm />} />
+          <Route path="ticket/:ticketId" element={<TicketForm />} />
         </Route>
       </Route>
     ),
@@ -75,17 +69,19 @@ function App() {
   );
 
   return (
-    // <ThemeContextProvider>
-    //   <AuthProvider>
-        <RouterProvider
-          router={router}
-          // future={{
-          //   v7_startTransition: true,
-          // }}
-        />
-    //   </AuthProvider>
-    //   <Toaster />
-    // </ThemeContextProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeContextProvider>
+        <AuthProvider>
+          <RouterProvider
+            router={router}
+            // future={{
+            //   v7_startTransition: true,
+            // }}
+          />
+        </AuthProvider>
+        <Toaster />
+      </ThemeContextProvider>
+    </QueryClientProvider>
   );
 }
 

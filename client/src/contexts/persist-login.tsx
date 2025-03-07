@@ -31,7 +31,8 @@ const PersistLogin = ({ children }: PersistLoginProps) => {
     return () => {
       isMounted = false;
     };
-  }, [persist, refresh, auth.accessToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
@@ -39,7 +40,7 @@ const PersistLogin = ({ children }: PersistLoginProps) => {
         children || <Outlet />
       ) : isLoading ? (
         <div className="w-full h-full flex justify-center items-center">
-          <div className="size-5 animate-spin" />
+          <div className="w-10 h-10 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
         </div>
       ) : (
         children || <Outlet />

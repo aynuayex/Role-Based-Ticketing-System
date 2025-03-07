@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as z from "zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLoaderData, useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 import Heading from "@/components/ui/heading";
 import { Button } from "@/components/ui/button";
@@ -19,60 +20,70 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import AlertModal from "@/components/modals/alert-modal";
-import { TicketColumn } from "./dashboard";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
+import { UseGetTicket } from "@/api/ticket/Queries";
 
 const formSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
 });
 
-type TicketFormValues = z.infer<typeof formSchema>;
+type TicketFormTypes = z.infer<typeof formSchema>;
 
 const TicketForm: React.FC = () => {
-  const axiosPrivate = useAxiosPrivate();
   const navigate = useNavigate();
-  const initialData = useLoaderData() as TicketColumn | null;
+  const { ticketId } = useParams();
+  const axiosPrivate = useAxiosPrivate();
+  const { data: initialData, isSuccess, isLoading } = UseGetTicket(ticketId);
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const title = initialData
+  const title = ticketId
     ? "Edit ticket information"
     : "Create ticket information";
-  const description = initialData
+  const description = ticketId
     ? "Edit a ticket information"
     : "Add a new ticket information";
-  const toastMessage = initialData
+  const toastMessage = ticketId
     ? "ticket information updated."
     : "ticket information created.";
-  const action = initialData ? "Save changes" : "Create";
+  const action = ticketId ? "Save changes" : "Create";
 
-  const form = useForm<TicketFormValues>({
+  const form = useForm<TicketFormTypes>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
+    defaultValues: {
       title: "",
       description: "",
     },
   });
 
-  const onSubmit = async (data: TicketFormValues) => {
+  // Use `useEffect` to update form values when data is available
+  useEffect(() => {
+    if (isSuccess && initialData) {
+      // form.reset({
+      //   title: initialData.title,
+      //   description: initialData.description,
+      // });
+      form.setValue("title", initialData.title);
+      form.setValue("description", initialData.description);
+    }
+  }, [initialData, isSuccess, form]);
+
+  const onSubmit = async (data: TicketFormTypes) => {
     try {
       setLoading(true);
-      if (initialData) {
-        await axiosPrivate.put(
-          `${import.meta.env.VITE_BASE_API}/tickets/${initialData._id}`,
-          data
-        );
+      if (ticketId) {
+        await axiosPrivate.put(`/tickets/${ticketId}`, data);
       } else {
-        await axiosPrivate.post(
-          `${import.meta.env.VITE_BASE_API}/tickets`,
-          data
-        );
+        await axiosPrivate.post(`/tickets`, data);
       }
       navigate(`/dashboard`);
       toast.success(toastMessage);
-    } catch {
+    } catch (err: any) {
+      if (!err?.response) {
+        toast.error("Server can not be reached, Please Try again later!");
+      }
       toast.error("Something went wrong!,please try again");
     } finally {
       setLoading(false);
@@ -82,12 +93,13 @@ const TicketForm: React.FC = () => {
   const onDelete = async () => {
     try {
       setLoading(true);
-      await axiosPrivate.delete(
-        `${import.meta.env.VITE_BASE_API}/tickets/${initialData?._id}`
-      );
+      await axiosPrivate.delete(`/tickets/${ticketId}`);
       navigate("/dashboard");
       toast.success("Ticket information deleted successfully!");
-    } catch {
+    } catch (err: any) {
+      if (!err?.response) {
+        toast.error("Server can not be reached, Please Try again later!");
+      }
       toast.error("Something went wrong!,please try again");
     } finally {
       setLoading(false);
@@ -101,13 +113,13 @@ const TicketForm: React.FC = () => {
         isOpen={open}
         onClose={() => setOpen(false)}
         onConfirm={onDelete}
-        loading={loading}
+        loading={loading || isLoading}
       />
       <div className="flex items-center justify-between">
         <Heading title={title} description={description} />
-        {initialData && (
+        {ticketId && (
           <Button
-            disabled={loading}
+            disabled={loading || isLoading}
             variant={"destructive"}
             size={"icon"}
             onClick={() => {
@@ -132,7 +144,11 @@ const TicketForm: React.FC = () => {
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input disabled={loading} placeholder="title" {...field} />
+                    <Input
+                      disabled={loading || isLoading}
+                      placeholder="title"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -146,7 +162,7 @@ const TicketForm: React.FC = () => {
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Input
-                      disabled={loading}
+                      disabled={loading || isLoading}
                       placeholder="This is your description"
                       {...field}
                     />
@@ -157,10 +173,14 @@ const TicketForm: React.FC = () => {
             />
           </div>
           <div className="flex space-x-8">
-            <Button onClick={() => navigate("/dashboard")} disabled={loading}>
+            <Button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              disabled={loading || isLoading}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || isLoading}>
               {action}
             </Button>
           </div>

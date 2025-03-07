@@ -1,5 +1,4 @@
-const User = require("../model");
-
+const { User } = require("../model");
 const logger = require("../../../config/logger");
 
 const handleLogout = async (req, res) => {
@@ -20,7 +19,7 @@ const handleLogout = async (req, res) => {
       res.clearCookie("jwt", {
         httpOnly: true,
         sameSite: "None",
-        // secure: true,
+        secure: true,
       });
       return res.sendStatus(204);
     }
@@ -36,11 +35,14 @@ const handleLogout = async (req, res) => {
     );
 
     console.log(result);
-    res.clearCookie("jwt", { httpOnly: true, sameSite: "None", 
-      // secure: true
-     }); // secure: true - only serves on https
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true
+    }); // secure: true - only serves on https
     return res.sendStatus(204);
   } catch (err) {
+    logger.error(err.message);
     res.status(500).json({ message: err.message });
   }
 };

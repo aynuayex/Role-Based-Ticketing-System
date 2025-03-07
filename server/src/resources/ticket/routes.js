@@ -5,8 +5,13 @@ const { validateTicket } = require("../../middleware/validateRequest");
 const ticketController = require("./controller");
 
 router.get("/", ticketController.handleGetAllTicket);
-router.get("/:id", ticketController.handleGetTicket);
-router.post("/", ticketController.handleNewTicket);
-router.put("/:id", ticketController.handleChangeTicket);
+router.get("/:ticketId", ticketController.handleGetTicket);
+
+router.post("/", validateTicket, ticketController.handleNewTicket);
+
+router.put("/:ticketId", validateTicket, ticketController.handleUpdateTicketByUser);
+router.put("/status/:ticketId", validateTicket, ticketController.handleUpdateTicketByAdmin);
+
+router.delete("/:ticketId", ticketController.handleDeleteTicket);
 
 module.exports = router;

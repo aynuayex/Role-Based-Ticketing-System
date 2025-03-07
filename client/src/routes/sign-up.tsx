@@ -16,6 +16,12 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 import useAuth from "@/hooks/useAuth";
 import axios from "@/api/axios";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
 
 const signUpFormSchema = z
   .object({
@@ -25,10 +31,15 @@ const signUpFormSchema = z
     email: z.string().email({ message: "Not a valid Email Address." }),
     password: z
       .string()
-      .min(4, { message: "Password must be at least 4 characters." }),
+      .min(8, { message: "Password must be at least 4 characters." })
+      .regex(passwordRegex, {
+        message:
+          "Password must be at least 8 characters long, contain one uppercase letter, one lowercase letter, one number, and one special character.",
+      }),
     confirmPassword: z
       .string()
-      .min(4, { message: "Password must be at least 4 characters." }),
+      .min(8, { message: "Password must be at least 4 characters." }),
+    persist: z.boolean(),
   })
   .superRefine(({ password, confirmPassword }, ctx) => {
     if (password !== confirmPassword) {
@@ -38,21 +49,15 @@ const signUpFormSchema = z
         path: ["confirmPassword"],
       });
     }
-
-    // if(!termsAndConditions) {
-    //     ctx.addIssue({
-    //         code: z.ZodIssueCode.custom,
-    //         message: "You must accept terms and conditions",
-    //         path: ["termsAndConditions"]
-    //     })
-    // }
   });
 
 type SignUpFormSchemaType = z.infer<typeof signUpFormSchema>;
 
 const SignUp = () => {
-  const { setAuth } = useAuth();
+  const { setAuth, setPersist } = useAuth();
   const navigate = useNavigate();
+  const [hidePassword, setHidePassword] = useState(true);
+  const [hideConfirmPassword, setHideConfirmPassword] = useState(true);
   const form = useForm<SignUpFormSchemaType>({
     resolver: zodResolver(signUpFormSchema),
     defaultValues: {
@@ -60,27 +65,47 @@ const SignUp = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      persist: JSON.parse(localStorage.getItem("persist") || "false"),
     },
   });
 
+  const togglePasswordVisibility = () => setHidePassword(!hidePassword);
+  const passwordType = hidePassword ? "password" : "text";
+
+  const toggleConfirmPasswordVisibility = () =>
+    setHideConfirmPassword(!hideConfirmPassword);
+  const confirmPasswordType = hideConfirmPassword ? "password" : "text";
+
   const onSubmit = async (data: SignUpFormSchemaType) => {
     try {
+      setPersist(data.persist);
+      localStorage.setItem("persist", JSON.stringify(data.persist));
       console.log({ data });
-      const response = await axios.post(
-        `${import.meta.env.VITE_BASE_API}/users/register`,
-        data
-      );
+      const response = await axios.post(`/users/register`, data);
       if (response.status === 201) {
-        const { message, id, email, fullName, role, accessToken } =
-          response.data;
-        console.log({ message, id, email, fullName, role, accessToken });
+        const {
+          message,
+          id,
+          email,
+          fullName,
+          role,
+          accessToken,
+          emailVerified,
+        } = response.data;
+        console.log({
+          message,
+          id,
+          email,
+          fullName,
+          role,
+          accessToken,
+          emailVerified,
+        });
         toast.success(message);
-        setAuth({ id, email, fullName, role, accessToken });
+        setAuth({ id, email, fullName, role, accessToken, emailVerified });
 
-        // updateAbility(role.permissions);
-
-        // navigate(from, { state: { pizza } });
-        navigate("/sign-in");
+        localStorage.setItem("userId", id); // Save userId
+        navigate("/verify-email");
       }
       console.log(response);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,10 +127,10 @@ const SignUp = () => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="bg-white space-y-8 w-1/3 flex flex-col justify-center items-center p-2 py-4 rounded-lg shadow"
+        className="bg-background/40 space-y-6 w-full sm:w-1/3 mt-4 sm:mt-0 flex flex-col justify-center items-center p-2 py-4 border rounded-lg shadow"
       >
         <Heading title="Register" />
-        <div className="w-full flex flex-col justify-center items-center gap-8">
+        <div className="w-full flex flex-col justify-center items-center gap-4 sm:gap-6">
           <FormField
             control={form.control}
             name="fullName"
@@ -123,6 +148,7 @@ const SignUp = () => {
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="email"
@@ -141,6 +167,7 @@ const SignUp = () => {
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="password"
@@ -148,17 +175,26 @@ const SignUp = () => {
               <FormItem className="w-3/4 ">
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input
-                    type="password"
-                    disabled={form.formState.isSubmitting}
-                    placeholder="Enter your Password"
-                    {...field}
-                  />
+                  <div className="w-full relative  ">
+                    <Input
+                      type={passwordType}
+                      disabled={form.formState.isSubmitting}
+                      placeholder="Enter your Password"
+                      {...field}
+                    />
+                    <span
+                      className="absolute left-[calc(100%-28px)] top-1/2 transform -translate-y-1/2 cursor-pointer dark:text-white"
+                      onClick={togglePasswordVisibility}
+                    >
+                      {hidePassword ? <Eye /> : <EyeOff />}
+                    </span>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="confirmPassword"
@@ -166,20 +202,45 @@ const SignUp = () => {
               <FormItem className="w-3/4 ">
                 <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
-                  <Input
-                    type="password"
-                    disabled={form.formState.isSubmitting}
-                    placeholder="Enter your Confirm Password"
-                    {...field}
-                  />
+                  <div className="w-full relative  ">
+                    <Input
+                      type={confirmPasswordType}
+                      disabled={form.formState.isSubmitting}
+                      placeholder="Enter your Confirm Password"
+                      {...field}
+                    />
+                    <span
+                      className="absolute left-[calc(100%-28px)] top-1/2 transform -translate-y-1/2 cursor-pointer dark:text-white"
+                      onClick={toggleConfirmPasswordVisibility}
+                    >
+                      {hideConfirmPassword ? <Eye /> : <EyeOff />}
+                    </span>
+                  </div>
                 </FormControl>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="persist"
+            render={({ field }) => (
+              <FormItem className="w-3/4 space-x-3">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <FormLabel>Remember me</FormLabel>
               </FormItem>
             )}
           />
         </div>
         <div className="flex space-x-8">
           <Button
+            type="button"
             onClick={() => navigate("/")}
             disabled={form.formState.isSubmitting}
           >
@@ -189,7 +250,7 @@ const SignUp = () => {
             Sign Up
           </Button>
         </div>
-        <p className="text-center ">
+        <p className="text-center">
           Already have an account?{" "}
           <Link className="text-blue-600 underline" to="/sign-in">
             LogIn
